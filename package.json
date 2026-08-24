@@ -10,15 +10,16 @@
     "start": "electron .",
     "icon": "node scripts/generate-icon.js",
     "predist": "npm run icon",
-    "dist": "electron-builder",
+    "dist": "cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder",
     "predist:win": "npm run icon",
-    "dist:win": "electron-builder --win",
+    "dist:win": "cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --win",
     "predist:mac": "npm run icon",
-    "dist:mac": "electron-builder --mac",
+    "dist:mac": "cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --mac",
     "predist:linux": "npm run icon",
-    "dist:linux": "electron-builder --linux"
+    "dist:linux": "cross-env CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder --linux"
   },
   "devDependencies": {
+    "cross-env": "^7.0.3",
     "electron": "^31.0.0",
     "electron-builder": "^24.13.3"
   },

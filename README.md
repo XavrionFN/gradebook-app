@@ -32,6 +32,21 @@ Installers are written to `gradebook-app/release/`. Building for macOS
 requires running on a Mac; Windows and Linux builds can generally be made
 from any platform electron-builder supports.
 
+### Windows: "Cannot create symbolic link" error
+
+If `npm run dist:win` fails with `ERROR: Cannot create symbolic link ... A
+required privilege is not held by the client`, electron-builder is trying to
+download and unpack a macOS code-signing cache tool (`winCodeSign`) that
+contains symlinks, and your Windows account isn't allowed to create them.
+The `dist:win` script already sets `CSC_IDENTITY_AUTO_DISCOVERY=false` to
+skip that download entirely — make sure you've run `npm install` after
+pulling this change so `cross-env` is installed. If you still hit it (e.g.
+from a leftover cache), either:
+
+- Enable Developer Mode: Settings → Privacy & security → For developers →
+  Developer Mode, then re-run the build, or
+- Run your terminal as Administrator once for the build.
+
 ## Where your data lives
 
 Grades are stored in a small JSON file in your OS's standard app-data
