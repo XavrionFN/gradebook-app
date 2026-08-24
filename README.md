@@ -53,6 +53,21 @@ Administrator before building.
 If you still see a winCodeSign error after pulling this fix, delete the
 stale cache first: `%LOCALAPPDATA%\electron-builder\Cache\winCodeSign`.
 
+### App runs but no window appears
+
+If the app launches (visible in Task Manager) but no window shows up, it's
+usually a silent crash or a GPU driver issue on some Windows machines. The
+app now:
+
+- Renders in software mode (`app.disableHardwareAcceleration()`), which
+  sidesteps GPU-driver crashes that otherwise fail silently with no window.
+- Writes any startup error to `main-error.log` in the app's data folder
+  (see below for the path) and shows it as a popup dialog, instead of
+  failing silently.
+
+If it still happens, check that log file and share its contents when
+reporting the issue.
+
 ## Where your data lives
 
 Grades are stored in a small JSON file in your OS's standard app-data

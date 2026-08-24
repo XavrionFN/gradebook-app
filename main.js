@@ -1,5 +1,28 @@
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const path = require('path');
+const fs = require('fs');
+
+function logFatal(label, err) {
+  const message = `${label}: ${err && err.stack ? err.stack : err}`;
+  try {
+    fs.appendFileSync(
+      path.join(app.getPath('userData'), 'main-error.log'),
+      `[${new Date().toISOString()}] ${message}\n`
+    );
+  } catch {
+    // best-effort logging only
+  }
+  dialog.showErrorBox('Weekly Gradebook failed to start', message);
+}
+
+process.on('uncaughtException', (err) => logFatal('uncaughtException', err));
+
+// Some Windows machines (older GPU drivers, remote desktop, VMs) crash the
+// GPU process and never render a window at all with no visible error.
+// Rendering in software avoids that at the cost of GPU acceleration, which
+// this app doesn't need.
+app.disableHardwareAcceleration();
+
 const Store = require('electron-store');
 
 const store = new Store({
@@ -28,10 +51,18 @@ function createWindow() {
     }
   });
 
+  mainWindow.webContents.on('did-fail-load', (_e, code, description) => {
+    logFatal('did-fail-load', new Error(`${description} (${code})`));
+  });
+
+  mainWindow.webContents.on('render-process-gone', (_e, details) => {
+    logFatal('render-process-gone', new Error(details.reason));
+  });
+
   mainWindow.loadFile(path.join(__dirname, 'renderer', 'index.html'));
 }
 
-app.whenReady().then(createWindow);
+app.whenReady().then(createWindow).catch((err) => logFatal('whenReady', err));
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
