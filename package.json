@@ -1,0 +1,61 @@
+{
+  "name": "weekly-gradebook",
+  "version": "1.0.0",
+  "description": "A local, standalone gradebook app for tracking student names and weekly grades with automatic weekly and overall averages.",
+  "main": "main.js",
+  "author": "Weekly Gradebook",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "icon": "node scripts/generate-icon.js",
+    "predist": "npm run icon",
+    "dist": "electron-builder",
+    "predist:win": "npm run icon",
+    "dist:win": "electron-builder --win",
+    "predist:mac": "npm run icon",
+    "dist:mac": "electron-builder --mac",
+    "predist:linux": "npm run icon",
+    "dist:linux": "electron-builder --linux"
+  },
+  "devDependencies": {
+    "electron": "^31.0.0",
+    "electron-builder": "^24.13.3"
+  },
+  "dependencies": {
+    "electron-store": "^8.2.0"
+  },
+  "build": {
+    "appId": "com.gradebook.weeklygradebook",
+    "productName": "Weekly Gradebook",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "renderer/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "icon": "build/icon.png"
+    },
+    "mac": {
+      "target": [
+        "dmg"
+      ],
+      "icon": "build/icon.png",
+      "category": "public.app-category.education"
+    },
+    "linux": {
+      "target": [
+        "AppImage"
+      ],
+      "icon": "build/icon.png",
+      "category": "Education"
+    }
+  }
+}

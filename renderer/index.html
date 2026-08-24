@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'" />
+  <title>Weekly Gradebook</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-mark">GB</span>
+        <div>
+          <h1>Weekly Gradebook</h1>
+          <p class="subtitle">Track students, enter weekly grades, see averages instantly.</p>
+        </div>
+      </div>
+      <div class="topbar-actions">
+        <button id="addStudentBtn" class="btn btn-primary">+ Student</button>
+        <button id="addWeekBtn" class="btn btn-secondary">+ Week</button>
+      </div>
+    </header>
+
+    <main class="content">
+      <section class="empty-state" id="emptyState" hidden>
+        <h2>No students or weeks yet</h2>
+        <p>Add a student and a week to start entering grades.</p>
+      </section>
+
+      <div class="table-wrap" id="tableWrap">
+        <table class="grid" id="gradeTable">
+          <thead>
+            <tr id="headRow">
+              <th class="student-col">Student</th>
+            </tr>
+          </thead>
+          <tbody id="bodyRows"></tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+
+  <div class="modal-backdrop" id="modalBackdrop" hidden>
+    <div class="modal" id="modal">
+      <h3 id="modalTitle">Title</h3>
+      <div id="modalBody"></div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" id="modalCancel">Cancel</button>
+        <button class="btn btn-primary" id="modalConfirm">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

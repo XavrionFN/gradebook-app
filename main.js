@@ -1,0 +1,91 @@
+const { app, BrowserWindow, ipcMain } = require('electron');
+const path = require('path');
+const Store = require('electron-store');
+
+const store = new Store({
+  name: 'gradebook-data',
+  defaults: {
+    students: [],
+    weeks: [],
+    grades: []
+  }
+});
+
+let mainWindow;
+
+function createWindow() {
+  mainWindow = new BrowserWindow({
+    width: 1200,
+    height: 800,
+    minWidth: 860,
+    minHeight: 560,
+    backgroundColor: '#12141a',
+    autoHideMenuBar: true,
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false
+    }
+  });
+
+  mainWindow.loadFile(path.join(__dirname, 'renderer', 'index.html'));
+}
+
+app.whenReady().then(createWindow);
+
+app.on('window-all-closed', () => {
+  if (process.platform !== 'darwin') app.quit();
+});
+
+app.on('activate', () => {
+  if (BrowserWindow.getAllWindows().length === 0) createWindow();
+});
+
+// --- Data access (all persisted locally via electron-store) ---
+
+ipcMain.handle('data:getAll', () => ({
+  students: store.get('students'),
+  weeks: store.get('weeks'),
+  grades: store.get('grades')
+}));
+
+ipcMain.handle('student:add', (_e, name) => {
+  const students = store.get('students');
+  const student = { id: `s_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`, name: name.trim() };
+  students.push(student);
+  store.set('students', students);
+  return student;
+});
+
+ipcMain.handle('student:remove', (_e, studentId) => {
+  store.set('students', store.get('students').filter((s) => s.id !== studentId));
+  store.set('grades', store.get('grades').filter((g) => g.studentId !== studentId));
+  return true;
+});
+
+ipcMain.handle('week:add', (_e, { label, date }) => {
+  const weeks = store.get('weeks');
+  const week = { id: `w_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`, label: label.trim(), date };
+  weeks.push(week);
+  weeks.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+  store.set('weeks', weeks);
+  return week;
+});
+
+ipcMain.handle('week:remove', (_e, weekId) => {
+  store.set('weeks', store.get('weeks').filter((w) => w.id !== weekId));
+  store.set('grades', store.get('grades').filter((g) => g.weekId !== weekId));
+  return true;
+});
+
+ipcMain.handle('grade:set', (_e, { studentId, weekId, scores }) => {
+  const grades = store.get('grades');
+  const existing = grades.find((g) => g.studentId === studentId && g.weekId === weekId);
+  if (existing) {
+    existing.scores = scores;
+  } else {
+    grades.push({ studentId, weekId, scores });
+  }
+  store.set('grades', grades.filter((g) => g.scores.length > 0));
+  return true;
+});
