@@ -30,7 +30,8 @@ const store = new Store({
   defaults: {
     students: [],
     weeks: [],
-    grades: []
+    grades: [],
+    classes: []
   }
 });
 
@@ -77,20 +78,54 @@ app.on('activate', () => {
 ipcMain.handle('data:getAll', () => ({
   students: store.get('students'),
   weeks: store.get('weeks'),
-  grades: store.get('grades')
+  grades: store.get('grades'),
+  classes: store.get('classes')
 }));
 
-ipcMain.handle('student:add', (_e, name) => {
+ipcMain.handle('student:add', (_e, { name, classId }) => {
   const students = store.get('students');
-  const student = { id: `s_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`, name: name.trim() };
+  const student = {
+    id: `s_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+    name: name.trim(),
+    classId: classId || null
+  };
   students.push(student);
   store.set('students', students);
   return student;
 });
 
+ipcMain.handle('student:update', (_e, { studentId, name, classId }) => {
+  const students = store.get('students');
+  const student = students.find((s) => s.id === studentId);
+  if (student) {
+    student.name = name.trim();
+    student.classId = classId || null;
+    store.set('students', students);
+  }
+  return student || null;
+});
+
 ipcMain.handle('student:remove', (_e, studentId) => {
   store.set('students', store.get('students').filter((s) => s.id !== studentId));
   store.set('grades', store.get('grades').filter((g) => g.studentId !== studentId));
+  return true;
+});
+
+ipcMain.handle('class:add', (_e, name) => {
+  const classes = store.get('classes');
+  const cls = { id: `c_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`, name: name.trim() };
+  classes.push(cls);
+  store.set('classes', classes);
+  return cls;
+});
+
+ipcMain.handle('class:remove', (_e, classId) => {
+  store.set('classes', store.get('classes').filter((c) => c.id !== classId));
+  const students = store.get('students');
+  students.forEach((s) => {
+    if (s.classId === classId) s.classId = null;
+  });
+  store.set('students', students);
   return true;
 });
 

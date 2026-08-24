@@ -114,6 +114,52 @@ html, body {
   border-radius: 6px;
 }
 
+.class-tabs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 28px 0;
+  flex-wrap: wrap;
+}
+
+.class-tab {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 6px 4px 12px;
+  border-radius: 8px 8px 0 0;
+  border: 1px solid transparent;
+}
+
+.class-tab-label {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 3px 0;
+}
+
+.class-tab:hover .class-tab-label {
+  color: var(--text);
+}
+
+.class-tab.active {
+  background: var(--panel);
+  border-color: var(--border);
+  border-bottom-color: var(--panel);
+}
+
+.class-tab.active .class-tab-label {
+  color: var(--text);
+}
+
+.class-tab .remove-x {
+  font-size: 11px;
+}
+
 .content {
   flex: 1;
   overflow: auto;
@@ -217,6 +263,29 @@ table.grid td {
   gap: 8px;
 }
 
+.row-head .student-name-btn {
+  background: none;
+  border: none;
+  color: var(--text);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  text-align: left;
+}
+
+.row-head .student-name-btn:hover {
+  color: var(--accent);
+}
+
+.class-chip {
+  display: block;
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--text-dim);
+  margin-top: 2px;
+}
+
 .cell-btn {
   width: 100%;
   min-height: 40px;
@@ -310,7 +379,7 @@ table.grid td {
   margin-bottom: 6px;
 }
 
-.field input, .field textarea {
+.field input, .field textarea, .field select {
   width: 100%;
   background: var(--panel-2);
   border: 1px solid var(--border);
@@ -321,7 +390,7 @@ table.grid td {
   font-family: inherit;
 }
 
-.field input:focus, .field textarea:focus {
+.field input:focus, .field textarea:focus, .field select:focus {
   outline: none;
   border-color: var(--accent);
 }

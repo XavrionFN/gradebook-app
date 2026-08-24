@@ -6,6 +6,8 @@ Everything is stored on your own machine — nothing is uploaded anywhere.
 ## Features
 
 - Add students by name, add weeks (label + date)
+- Organize students into class sections (e.g. "Period 1 - Algebra") and
+  filter the gradebook by class using the tabs, or view everyone at once
 - Enter one or more scores per student per week — the app averages them
   into that week's grade automatically
 - See an overall average per student across all weeks entered so far

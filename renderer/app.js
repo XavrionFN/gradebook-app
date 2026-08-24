@@ -1,10 +1,12 @@
-let state = { students: [], weeks: [], grades: [] };
+let state = { students: [], weeks: [], grades: [], classes: [] };
+let currentClassFilter = 'all';
 
 const el = (id) => document.getElementById(id);
 const bodyRows = el('bodyRows');
 const headRow = el('headRow');
 const emptyState = el('emptyState');
 const tableWrap = el('tableWrap');
+const classTabs = el('classTabs');
 
 const modalBackdrop = el('modalBackdrop');
 const modalTitle = el('modalTitle');
@@ -46,7 +48,48 @@ function overallAverage(studentId) {
   return average(weekAverages);
 }
 
+function classNameFor(classId) {
+  const cls = state.classes.find((c) => c.id === classId);
+  return cls ? cls.name : null;
+}
+
+function renderClassTabs() {
+  classTabs.hidden = state.classes.length === 0;
+  if (state.classes.length === 0) {
+    classTabs.innerHTML = '';
+    return;
+  }
+
+  const countFor = (classId) =>
+    state.students.filter((s) => (classId === null ? true : s.classId === classId)).length;
+
+  const tabs = [{ id: 'all', name: 'All Students', removable: false }].concat(
+    state.classes.map((c) => ({ id: c.id, name: c.name, removable: true }))
+  );
+
+  classTabs.innerHTML = tabs
+    .map((t) => {
+      const count = t.id === 'all' ? state.students.length : countFor(t.id);
+      const active = currentClassFilter === t.id ? ' active' : '';
+      const removeBtn = t.removable
+        ? `<button class="remove-x" data-remove-class="${t.id}" title="Remove class">✕</button>`
+        : '';
+      return `
+        <span class="class-tab${active}">
+          <button class="class-tab-label" data-select-class="${t.id}">${escapeHtml(t.name)} (${count})</button>
+          ${removeBtn}
+        </span>`;
+    })
+    .join('');
+}
+
 function render() {
+  renderClassTabs();
+
+  const visibleStudents = state.students.filter(
+    (s) => currentClassFilter === 'all' || s.classId === currentClassFilter
+  );
+
   const hasData = state.students.length > 0 && state.weeks.length > 0;
   emptyState.hidden = hasData;
   tableWrap.hidden = !hasData;
@@ -69,14 +112,18 @@ function render() {
 
   // Body rows
   bodyRows.innerHTML = '';
-  state.students.forEach((s) => {
+  visibleStudents.forEach((s) => {
     const tr = document.createElement('tr');
 
+    const showChip = currentClassFilter === 'all' && classNameFor(s.classId);
     const nameTd = document.createElement('td');
     nameTd.className = 'student-col';
     nameTd.innerHTML = `
       <div class="row-head">
-        <span>${escapeHtml(s.name)}</span>
+        <span>
+          <button class="student-name-btn" data-edit-student="${s.id}">${escapeHtml(s.name)}</button>
+          ${showChip ? `<span class="class-chip">${escapeHtml(classNameFor(s.classId))}</span>` : ''}
+        </span>
         <button class="remove-x" data-remove-student="${s.id}" title="Remove student">✕</button>
       </div>`;
     tr.appendChild(nameTd);
@@ -145,19 +192,57 @@ modalConfirm.addEventListener('click', async () => {
 
 // --- Actions ---
 
+function classOptionsHtml(selectedId) {
+  const options = ['<option value="">No class</option>'].concat(
+    state.classes.map(
+      (c) => `<option value="${c.id}"${c.id === selectedId ? ' selected' : ''}>${escapeHtml(c.name)}</option>`
+    )
+  );
+  return options.join('');
+}
+
+function studentFormFields(name = '', classId = '') {
+  return `<div class="field">
+       <label for="studentName">Student name</label>
+       <input type="text" id="studentName" placeholder="e.g. Jordan Lee" value="${escapeHtml(name)}" />
+     </div>
+     <div class="field">
+       <label for="studentClass">Class</label>
+       <select id="studentClass">${classOptionsHtml(classId)}</select>
+     </div>`;
+}
+
 el('addStudentBtn').addEventListener('click', () => {
+  const preselect = currentClassFilter !== 'all' ? currentClassFilter : '';
   openModal(
     'Add Student',
-    `<div class="field">
-       <label for="studentName">Student name</label>
-       <input type="text" id="studentName" placeholder="e.g. Jordan Lee" />
-     </div>`,
+    studentFormFields('', preselect),
     'Add',
     async () => {
       const input = el('studentName');
       const name = input.value.trim();
       if (!name) return input.focus();
-      await window.gradebook.addStudent(name);
+      const classId = el('studentClass').value || null;
+      await window.gradebook.addStudent({ name, classId });
+      await refresh();
+      closeModal();
+    }
+  );
+});
+
+el('addClassBtn').addEventListener('click', () => {
+  openModal(
+    'Add Class',
+    `<div class="field">
+       <label for="className">Class name</label>
+       <input type="text" id="className" placeholder="e.g. Period 3 - Algebra" />
+     </div>`,
+    'Add',
+    async () => {
+      const input = el('className');
+      const name = input.value.trim();
+      if (!name) return input.focus();
+      await window.gradebook.addClass(name);
       await refresh();
       closeModal();
     }
@@ -219,6 +304,26 @@ bodyRows.addEventListener('click', (e) => {
     return;
   }
 
+  const editStudentId = e.target.dataset.editStudent;
+  if (editStudentId) {
+    const student = state.students.find((s) => s.id === editStudentId);
+    openModal(
+      'Edit Student',
+      studentFormFields(student.name, student.classId || ''),
+      'Save',
+      async () => {
+        const input = el('studentName');
+        const name = input.value.trim();
+        if (!name) return input.focus();
+        const classId = el('studentClass').value || null;
+        await window.gradebook.updateStudent({ studentId: editStudentId, name, classId });
+        await refresh();
+        closeModal();
+      }
+    );
+    return;
+  }
+
   const removeStudentId = e.target.dataset.removeStudent;
   if (removeStudentId) {
     if (confirm('Remove this student and all their grades?')) {
@@ -232,6 +337,25 @@ headRow.addEventListener('click', (e) => {
   if (removeWeekId) {
     if (confirm('Remove this week and all grades entered for it?')) {
       window.gradebook.removeWeek(removeWeekId).then(refresh);
+    }
+  }
+});
+
+classTabs.addEventListener('click', (e) => {
+  const selectId = e.target.dataset.selectClass;
+  if (selectId) {
+    currentClassFilter = selectId === 'all' ? 'all' : selectId;
+    render();
+    return;
+  }
+
+  const removeClassId = e.target.dataset.removeClass;
+  if (removeClassId) {
+    if (confirm('Remove this class? Students in it will become unassigned (not deleted).')) {
+      window.gradebook.removeClass(removeClassId).then(() => {
+        if (currentClassFilter === removeClassId) currentClassFilter = 'all';
+        refresh();
+      });
     }
   }
 });
