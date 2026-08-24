@@ -32,20 +32,26 @@ Installers are written to `gradebook-app/release/`. Building for macOS
 requires running on a Mac; Windows and Linux builds can generally be made
 from any platform electron-builder supports.
 
-### Windows: "Cannot create symbolic link" error
+### Windows: "Cannot create symbolic link" / winCodeSign errors
 
-If `npm run dist:win` fails with `ERROR: Cannot create symbolic link ... A
-required privilege is not held by the client`, electron-builder is trying to
-download and unpack a macOS code-signing cache tool (`winCodeSign`) that
-contains symlinks, and your Windows account isn't allowed to create them.
-The `dist:win` script already sets `CSC_IDENTITY_AUTO_DISCOVERY=false` to
-skip that download entirely — make sure you've run `npm install` after
-pulling this change so `cross-env` is installed. If you still hit it (e.g.
-from a leftover cache), either:
+`npm run dist:win` used to fail with `ERROR: Cannot create symbolic link ...
+A required privilege is not held by the client`, or with a `7za.exe`
+extraction failure — both come from electron-builder downloading and
+unpacking a code-signing/resource-editing cache tool (`winCodeSign`) that
+contains macOS symlinks, which most Windows accounts can't create.
 
-- Enable Developer Mode: Settings → Privacy & security → For developers →
-  Developer Mode, then re-run the build, or
-- Run your terminal as Administrator once for the build.
+This is now avoided entirely: `build.win.signAndEditExecutable` is set to
+`false` in `package.json`, so electron-builder never touches `winCodeSign`
+for a Windows build. The trade-off is that the installed app's `.exe` keeps
+Electron's default icon (the installer itself, `Weekly Gradebook Setup
+*.exe`, still gets the custom icon — that's set by NSIS directly). If you'd
+rather have the custom icon on the installed exe too, delete that line from
+`package.json` and instead enable Developer Mode (Settings → Privacy &
+security → For developers → Developer Mode) or run your terminal as
+Administrator before building.
+
+If you still see a winCodeSign error after pulling this fix, delete the
+stale cache first: `%LOCALAPPDATA%\electron-builder\Cache\winCodeSign`.
 
 ## Where your data lives
 
