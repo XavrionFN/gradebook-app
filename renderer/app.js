@@ -217,9 +217,9 @@ function studentFormFields(name = '', classId = '', code = '') {
        <select id="studentClass">${classOptionsHtml(classId)}</select>
      </div>
      <div class="field">
-       <label for="studentCode">Check-in code (optional)</label>
-       <input type="text" id="studentCode" placeholder="Scan or type barcode/QR value" value="${escapeHtml(code)}" />
-       <p class="hint">Lets this student scan in on the Check-In tab.</p>
+       <label for="studentCode">ID number (optional)</label>
+       <input type="text" id="studentCode" placeholder="Scan or type student ID / barcode / QR value" value="${escapeHtml(code)}" />
+       <p class="hint">Shown on the Master List and used to scan this student in on the Check-In tab.</p>
      </div>`;
 }
 
@@ -343,36 +343,44 @@ bodyRows.addEventListener('click', (e) => {
 
   const editStudentId = e.target.dataset.editStudent;
   if (editStudentId) {
-    const student = state.students.find((s) => s.id === editStudentId);
-    openModal(
-      'Edit Student',
-      studentFormFields(student.name, student.classId || '', student.code || ''),
-      'Save',
-      async () => {
-        const input = el('studentName');
-        const name = input.value.trim();
-        if (!name) return input.focus();
-        const classId = el('studentClass').value || null;
-        const code = el('studentCode').value.trim();
-        try {
-          await window.gradebook.updateStudent({ studentId: editStudentId, name, classId, code });
-        } catch (err) {
-          return alert(err.message || String(err));
-        }
-        await refresh();
-        closeModal();
-      }
-    );
+    openEditStudentModal(editStudentId);
     return;
   }
 
   const removeStudentId = e.target.dataset.removeStudent;
   if (removeStudentId) {
-    if (confirm('Remove this student and all their grades?')) {
-      window.gradebook.removeStudent(removeStudentId).then(refresh);
-    }
+    removeStudentConfirm(removeStudentId);
   }
 });
+
+function openEditStudentModal(studentId) {
+  const student = state.students.find((s) => s.id === studentId);
+  openModal(
+    'Edit Student',
+    studentFormFields(student.name, student.classId || '', student.code || ''),
+    'Save',
+    async () => {
+      const input = el('studentName');
+      const name = input.value.trim();
+      if (!name) return input.focus();
+      const classId = el('studentClass').value || null;
+      const code = el('studentCode').value.trim();
+      try {
+        await window.gradebook.updateStudent({ studentId, name, classId, code });
+      } catch (err) {
+        return alert(err.message || String(err));
+      }
+      await refresh();
+      closeModal();
+    }
+  );
+}
+
+function removeStudentConfirm(studentId) {
+  if (confirm('Remove this student and all their grades?')) {
+    window.gradebook.removeStudent(studentId).then(refresh);
+  }
+}
 
 headRow.addEventListener('click', (e) => {
   const removeWeekId = e.target.dataset.removeWeek;
@@ -433,6 +441,7 @@ async function refresh() {
   state = await window.gradebook.getAll();
   render();
   renderCheckinView();
+  renderRosterTable();
 }
 
 refresh();
