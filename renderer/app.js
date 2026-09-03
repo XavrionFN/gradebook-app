@@ -71,12 +71,16 @@ function renderClassTabs() {
     .map((t) => {
       const count = t.id === 'all' ? state.students.length : countFor(t.id);
       const active = currentClassFilter === t.id ? ' active' : '';
+      const editBtn = t.removable
+        ? `<button class="remove-x" data-edit-class="${t.id}" title="Edit class">✎</button>`
+        : '';
       const removeBtn = t.removable
         ? `<button class="remove-x" data-remove-class="${t.id}" title="Remove class">✕</button>`
         : '';
       return `
         <span class="class-tab${active}">
           <button class="class-tab-label" data-select-class="${t.id}">${escapeHtml(t.name)} (${count})</button>
+          ${editBtn}
           ${removeBtn}
         </span>`;
     })
@@ -167,10 +171,11 @@ function escapeHtml(str) {
 
 let onConfirm = null;
 
-function openModal(title, bodyHtml, confirmLabel, handler) {
+function openModal(title, bodyHtml, confirmLabel, handler, opts = {}) {
   modalTitle.textContent = title;
   modalBody.innerHTML = bodyHtml;
   modalConfirm.textContent = confirmLabel;
+  modalConfirm.hidden = !!opts.hideConfirm;
   onConfirm = handler;
   modalBackdrop.hidden = false;
   const firstInput = modalBody.querySelector('input, textarea');
@@ -179,6 +184,7 @@ function openModal(title, bodyHtml, confirmLabel, handler) {
 
 function closeModal() {
   modalBackdrop.hidden = true;
+  modalConfirm.hidden = false;
   onConfirm = null;
 }
 
@@ -201,7 +207,7 @@ function classOptionsHtml(selectedId) {
   return options.join('');
 }
 
-function studentFormFields(name = '', classId = '') {
+function studentFormFields(name = '', classId = '', code = '') {
   return `<div class="field">
        <label for="studentName">Student name</label>
        <input type="text" id="studentName" placeholder="e.g. Jordan Lee" value="${escapeHtml(name)}" />
@@ -209,6 +215,34 @@ function studentFormFields(name = '', classId = '') {
      <div class="field">
        <label for="studentClass">Class</label>
        <select id="studentClass">${classOptionsHtml(classId)}</select>
+     </div>
+     <div class="field">
+       <label for="studentCode">Check-in code (optional)</label>
+       <input type="text" id="studentCode" placeholder="Scan or type barcode/QR value" value="${escapeHtml(code)}" />
+       <p class="hint">Lets this student scan in on the Check-In tab.</p>
+     </div>`;
+}
+
+function checkinModeOptionsHtml(selected) {
+  const modes = [
+    ['off', 'Off — not used for check-in'],
+    ['roster', 'Auto-add to roster on scan'],
+    ['attendance', 'Attendance only (roster unchanged)']
+  ];
+  return modes
+    .map(([value, label]) => `<option value="${value}"${value === selected ? ' selected' : ''}>${label}</option>`)
+    .join('');
+}
+
+function classFormFields(name = '', checkinMode = 'off') {
+  return `<div class="field">
+       <label for="className">Class name</label>
+       <input type="text" id="className" placeholder="e.g. Period 3 - Algebra" value="${escapeHtml(name)}" />
+     </div>
+     <div class="field">
+       <label for="classCheckinMode">Check-in behavior</label>
+       <select id="classCheckinMode">${checkinModeOptionsHtml(checkinMode)}</select>
+       <p class="hint">Controls what happens when a student scans in while this class is the active check-in station.</p>
      </div>`;
 }
 
@@ -223,7 +257,12 @@ el('addStudentBtn').addEventListener('click', () => {
       const name = input.value.trim();
       if (!name) return input.focus();
       const classId = el('studentClass').value || null;
-      await window.gradebook.addStudent({ name, classId });
+      const code = el('studentCode').value.trim();
+      try {
+        await window.gradebook.addStudent({ name, classId, code });
+      } catch (err) {
+        return alert(err.message || String(err));
+      }
       await refresh();
       closeModal();
     }
@@ -233,16 +272,14 @@ el('addStudentBtn').addEventListener('click', () => {
 el('addClassBtn').addEventListener('click', () => {
   openModal(
     'Add Class',
-    `<div class="field">
-       <label for="className">Class name</label>
-       <input type="text" id="className" placeholder="e.g. Period 3 - Algebra" />
-     </div>`,
+    classFormFields(),
     'Add',
     async () => {
       const input = el('className');
       const name = input.value.trim();
       if (!name) return input.focus();
-      await window.gradebook.addClass(name);
+      const checkinMode = el('classCheckinMode').value;
+      await window.gradebook.addClass({ name, checkinMode });
       await refresh();
       closeModal();
     }
@@ -309,14 +346,19 @@ bodyRows.addEventListener('click', (e) => {
     const student = state.students.find((s) => s.id === editStudentId);
     openModal(
       'Edit Student',
-      studentFormFields(student.name, student.classId || ''),
+      studentFormFields(student.name, student.classId || '', student.code || ''),
       'Save',
       async () => {
         const input = el('studentName');
         const name = input.value.trim();
         if (!name) return input.focus();
         const classId = el('studentClass').value || null;
-        await window.gradebook.updateStudent({ studentId: editStudentId, name, classId });
+        const code = el('studentCode').value.trim();
+        try {
+          await window.gradebook.updateStudent({ studentId: editStudentId, name, classId, code });
+        } catch (err) {
+          return alert(err.message || String(err));
+        }
         await refresh();
         closeModal();
       }
@@ -349,6 +391,26 @@ classTabs.addEventListener('click', (e) => {
     return;
   }
 
+  const editClassId = e.target.dataset.editClass;
+  if (editClassId) {
+    const cls = state.classes.find((c) => c.id === editClassId);
+    openModal(
+      'Edit Class',
+      classFormFields(cls.name, cls.checkinMode || 'off'),
+      'Save',
+      async () => {
+        const input = el('className');
+        const name = input.value.trim();
+        if (!name) return input.focus();
+        const checkinMode = el('classCheckinMode').value;
+        await window.gradebook.updateClass({ classId: editClassId, name, checkinMode });
+        await refresh();
+        closeModal();
+      }
+    );
+    return;
+  }
+
   const removeClassId = e.target.dataset.removeClass;
   if (removeClassId) {
     if (confirm('Remove this class? Students in it will become unassigned (not deleted).')) {
@@ -370,6 +432,7 @@ document.addEventListener('keydown', (e) => {
 async function refresh() {
   state = await window.gradebook.getAll();
   render();
+  renderCheckinView();
 }
 
 refresh();

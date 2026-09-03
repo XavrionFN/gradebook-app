@@ -407,3 +407,230 @@ table.grid td {
   gap: 10px;
   margin-top: 18px;
 }
+
+/* --- View switch (Gradebook / Check-In) --- */
+
+.view-switch {
+  display: flex;
+  gap: 2px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 2px;
+  margin-right: 6px;
+}
+
+.view-switch-btn {
+  border: none;
+  background: transparent;
+  color: var(--text-dim);
+  padding: 7px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.view-switch-btn.active {
+  background: var(--accent);
+  color: #10131c;
+}
+
+/* --- Check-In view --- */
+
+.card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 14px;
+}
+
+.card h2 {
+  font-size: 15px;
+  margin: 0 0 12px;
+  font-weight: 600;
+}
+
+.card h3 {
+  font-size: 13px;
+  margin: 0 0 8px;
+  font-weight: 600;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.hint {
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-top: 6px;
+}
+
+.row {
+  display: flex;
+  gap: 10px;
+}
+
+.row > .field {
+  flex: 1;
+}
+
+.checkin-panel {
+  display: none;
+}
+
+.checkin-panel.active {
+  display: block;
+}
+
+.scan-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 30px 20px;
+  text-align: center;
+}
+
+.scan-box label {
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-bottom: 4px;
+}
+
+.scan-box input {
+  font-size: 20px;
+  text-align: center;
+  padding: 14px;
+  max-width: 420px;
+  width: 100%;
+  letter-spacing: 0.02em;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+}
+
+.scan-box input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.scan-hint {
+  color: var(--text-dim);
+  font-size: 12px;
+  margin-top: 8px;
+}
+
+.toast {
+  margin-top: 16px;
+  padding: 12px 18px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  max-width: 460px;
+  display: none;
+}
+
+.toast.show { display: block; }
+.toast.ok { background: rgba(74, 222, 128, 0.12); color: var(--good); }
+.toast.err { background: rgba(248, 113, 113, 0.12); color: var(--low); }
+.toast.info { background: rgba(124, 156, 255, 0.12); color: var(--accent); }
+
+.loc-option {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--panel-2);
+  color: var(--text);
+  margin-bottom: 8px;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+}
+
+.loc-option:hover:not(:disabled) { border-color: var(--accent); }
+.loc-option:disabled { opacity: 0.45; cursor: not-allowed; }
+.loc-option .cap { font-size: 12px; color: var(--text-dim); }
+
+.grid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.stat {
+  background: var(--panel-2);
+  border-radius: 9px;
+  padding: 12px 14px;
+}
+
+.stat .n { font-size: 22px; font-weight: 600; }
+.stat .l { font-size: 12px; color: var(--text-dim); }
+
+.filters {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.filters > * { flex: 1; min-width: 130px; }
+
+.actions-row {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.empty {
+  color: var(--text-dim);
+  font-size: 13px;
+  padding: 16px 4px;
+  text-align: center;
+}
+
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.badge.accent { background: rgba(124, 156, 255, 0.15); color: var(--accent); }
+.badge.warn { background: rgba(250, 204, 21, 0.15); color: var(--mid); }
+.badge.success { background: rgba(74, 222, 128, 0.15); color: var(--good); }
+.badge.muted { background: var(--panel-2); color: var(--text-dim); }
+
+table.simple-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+table.simple-table th {
+  text-align: left;
+  padding: 8px;
+  color: var(--text-dim);
+  font-weight: 600;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+table.simple-table td {
+  padding: 8px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+
+table.simple-table tr:last-child td { border-bottom: none; }
+
+@media (max-width: 520px) {
+  .grid2 { grid-template-columns: 1fr; }
+  .row { flex-direction: column; }
+}
