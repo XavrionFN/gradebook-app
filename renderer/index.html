@@ -17,31 +17,110 @@
         </div>
       </div>
       <div class="topbar-actions">
+        <div class="view-switch" id="viewSwitch">
+          <button class="view-switch-btn active" data-view="gradebook">Gradebook</button>
+          <button class="view-switch-btn" data-view="checkin">Check-In</button>
+        </div>
         <button id="addStudentBtn" class="btn btn-primary">+ Student</button>
         <button id="addWeekBtn" class="btn btn-secondary">+ Week</button>
         <button id="addClassBtn" class="btn btn-secondary">+ Class</button>
       </div>
     </header>
 
-    <nav class="class-tabs" id="classTabs" hidden></nav>
+    <section id="gradebookView">
+      <nav class="class-tabs" id="classTabs" hidden></nav>
 
-    <main class="content">
-      <section class="empty-state" id="emptyState" hidden>
-        <h2>No students or weeks yet</h2>
-        <p>Add a student and a week to start entering grades.</p>
-      </section>
+      <main class="content">
+        <section class="empty-state" id="emptyState" hidden>
+          <h2>No students or weeks yet</h2>
+          <p>Add a student and a week to start entering grades.</p>
+        </section>
 
-      <div class="table-wrap" id="tableWrap">
-        <table class="grid" id="gradeTable">
-          <thead>
-            <tr id="headRow">
-              <th class="student-col">Student</th>
-            </tr>
-          </thead>
-          <tbody id="bodyRows"></tbody>
-        </table>
-      </div>
-    </main>
+        <div class="table-wrap" id="tableWrap">
+          <table class="grid" id="gradeTable">
+            <thead>
+              <tr id="headRow">
+                <th class="student-col">Student</th>
+              </tr>
+            </thead>
+            <tbody id="bodyRows"></tbody>
+          </table>
+        </div>
+      </main>
+    </section>
+
+    <section id="checkinView" hidden>
+      <nav class="class-tabs" id="checkinSubTabs">
+        <span class="class-tab active"><button class="class-tab-label" data-checkin-tab="scan">Scan</button></span>
+        <span class="class-tab"><button class="class-tab-label" data-checkin-tab="activity">Activity</button></span>
+        <span class="class-tab"><button class="class-tab-label" data-checkin-tab="locations">Locations</button></span>
+      </nav>
+
+      <main class="content">
+        <div class="checkin-panel active" id="checkin-panel-scan">
+          <div class="card">
+            <div class="field">
+              <label for="activeClassSelect">This station checks students into</label>
+              <select id="activeClassSelect"></select>
+              <p class="hint" id="activeClassHint"></p>
+            </div>
+          </div>
+          <div class="card scan-box">
+            <label for="scanInput">Scan or type student check-in code, then press Enter</label>
+            <input type="text" id="scanInput" autocomplete="off" placeholder="Scan badge here" />
+            <div class="scan-hint">Works with any USB/Bluetooth barcode or QR scanner (acts like a keyboard), or type the code manually.</div>
+            <div class="toast" id="scanToast"></div>
+          </div>
+          <div class="card">
+            <h2 id="scanStatusTitle">Currently out of class</h2>
+            <div id="scanStatusTable"></div>
+          </div>
+        </div>
+
+        <div class="checkin-panel" id="checkin-panel-activity">
+          <div class="card">
+            <h2>Overview</h2>
+            <div class="grid2" id="checkinStatsGrid"></div>
+          </div>
+          <div class="card">
+            <h2>Full activity log</h2>
+            <div class="filters">
+              <input type="text" id="checkinLogSearch" placeholder="Search student name" />
+              <select id="checkinLogClassFilter"><option value="">All classes/locations</option></select>
+              <input type="text" id="checkinLogDateFilter" placeholder="YYYY-MM-DD" />
+            </div>
+            <div id="checkinLogTable"></div>
+            <div class="actions-row" style="margin-top:10px;">
+              <button class="btn btn-secondary btn-icon" id="checkinExportCsvBtn">Export CSV</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="checkin-panel" id="checkin-panel-locations">
+          <div class="card">
+            <h2>Hallway pass locations</h2>
+            <p class="hint">Used for out-of-class passes (bathroom, nurse, office) when no classroom is selected as the active check-in station.</p>
+            <div id="checkinLocationsTable"></div>
+          </div>
+          <div class="card">
+            <h3>Add a location</h3>
+            <div class="row">
+              <div class="field">
+                <label for="locName">Name</label>
+                <input type="text" id="locName" placeholder="e.g. Bathroom - 2nd floor" />
+              </div>
+              <div class="field">
+                <label for="locCapacity">Capacity (blank = unlimited)</label>
+                <input type="number" id="locCapacity" min="1" placeholder="e.g. 2" />
+              </div>
+              <div class="field" style="flex:0; align-self:flex-end;">
+                <button class="btn btn-primary" id="addLocationBtn">Add</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </section>
   </div>
 
   <div class="modal-backdrop" id="modalBackdrop" hidden>
@@ -56,5 +135,6 @@
   </div>
 
   <script src="app.js"></script>
+  <script src="checkin.js"></script>
 </body>
 </html>
