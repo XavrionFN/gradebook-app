@@ -522,6 +522,21 @@ table.grid td {
   margin-top: 8px;
 }
 
+.scan-actions {
+  margin-top: 14px;
+}
+
+.camera-modal {
+  width: 480px;
+}
+
+#cameraVideo {
+  width: 100%;
+  border-radius: 8px;
+  background: #000;
+  display: block;
+}
+
 .toast {
   margin-top: 16px;
   padding: 12px 18px;
