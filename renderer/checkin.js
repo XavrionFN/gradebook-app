@@ -46,6 +46,7 @@ viewSwitch.addEventListener('click', (e) => {
   viewSwitch.querySelectorAll('.view-switch-btn').forEach((b) => b.classList.toggle('active', b.dataset.view === view));
   gradebookView.hidden = view !== 'gradebook';
   checkinView.hidden = view !== 'checkin';
+  rosterView.hidden = view !== 'roster';
   if (view === 'checkin' && checkinSubTab === 'scan') {
     scanInput.focus();
   } else {

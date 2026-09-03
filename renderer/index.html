@@ -20,6 +20,7 @@
         <div class="view-switch" id="viewSwitch">
           <button class="view-switch-btn active" data-view="gradebook">Gradebook</button>
           <button class="view-switch-btn" data-view="checkin">Check-In</button>
+          <button class="view-switch-btn" data-view="roster">Master List</button>
         </div>
         <button id="addStudentBtn" class="btn btn-primary">+ Student</button>
         <button id="addWeekBtn" class="btn btn-secondary">+ Week</button>
@@ -124,6 +125,28 @@
         </div>
       </main>
     </section>
+
+    <section id="rosterView" hidden>
+      <main class="content">
+        <div class="card">
+          <h2>Master student list</h2>
+          <p class="hint" style="margin-bottom:10px;">Every student's name and ID number in one place — search it, export it, or hand it off as a roster.</p>
+          <input type="text" id="rosterSearch" placeholder="Search by name or ID number" style="margin-bottom:10px;" />
+          <div id="rosterTable"></div>
+          <div class="actions-row" style="margin-top:10px;">
+            <button class="btn btn-secondary btn-icon" id="rosterExportCsvBtn">Export CSV</button>
+          </div>
+        </div>
+        <div class="card">
+          <h3>Bulk add students</h3>
+          <p class="hint" style="margin-bottom:8px;">One student per line: name, ID number, class (optional — must match an existing class name exactly, or leave blank to add unassigned).</p>
+          <textarea id="bulkRosterCsv" rows="4" placeholder="Jane Smith, 100234, Mr. Mangum's Class&#10;Sam Lee, 100235"></textarea>
+          <div class="actions-row" style="margin-top:8px;">
+            <button class="btn btn-primary" id="bulkAddBtn">Add all</button>
+          </div>
+        </div>
+      </main>
+    </section>
   </div>
 
   <div class="modal-backdrop" id="modalBackdrop" hidden>
@@ -152,5 +175,6 @@
   <script src="vendor/zxing.min.js"></script>
   <script src="app.js"></script>
   <script src="checkin.js"></script>
+  <script src="roster.js"></script>
 </body>
 </html>
