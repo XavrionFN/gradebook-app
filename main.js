@@ -35,7 +35,8 @@ const store = new Store({
     checkinLocations: [],
     checkinLogs: [],
     checkinActive: {},
-    checkinSettings: { activeCheckinClassId: null }
+    checkinStations: [],
+    checkinSettings: { activeCheckinClassId: null, activeStationId: null }
   }
 });
 
@@ -104,6 +105,7 @@ ipcMain.handle('data:getAll', () => ({
   checkinLocations: store.get('checkinLocations'),
   checkinLogs: store.get('checkinLogs'),
   checkinActive: store.get('checkinActive'),
+  checkinStations: store.get('checkinStations'),
   checkinSettings: store.get('checkinSettings')
 }));
 
@@ -178,6 +180,14 @@ ipcMain.handle('class:remove', (_e, classId) => {
     if (s.classId === classId) s.classId = null;
   });
   store.set('students', students);
+
+  // Stations pointed at this class fall back to plain hallway-pass mode rather than vanishing.
+  const stations = store.get('checkinStations');
+  stations.forEach((st) => {
+    if (st.classId === classId) st.classId = null;
+  });
+  store.set('checkinStations', stations);
+
   const settings = store.get('checkinSettings');
   if (settings.activeCheckinClassId === classId) {
     store.set('checkinSettings', { ...settings, activeCheckinClassId: null });
@@ -243,8 +253,44 @@ ipcMain.handle('location:remove', (_e, locationId) => {
   return true;
 });
 
-ipcMain.handle('checkin:setActiveClass', (_e, classId) => {
-  const settings = { activeCheckinClassId: classId || null };
+ipcMain.handle('station:add', (_e, { name, classId }) => {
+  const stations = store.get('checkinStations');
+  const station = { id: genId('station'), name: name.trim(), classId: classId || null };
+  stations.push(station);
+  store.set('checkinStations', stations);
+  return station;
+});
+
+ipcMain.handle('station:update', (_e, { stationId, name, classId }) => {
+  const stations = store.get('checkinStations');
+  const station = stations.find((st) => st.id === stationId);
+  if (station) {
+    station.name = name.trim();
+    station.classId = classId || null;
+    store.set('checkinStations', stations);
+  }
+  return station || null;
+});
+
+ipcMain.handle('station:remove', (_e, stationId) => {
+  store.set('checkinStations', store.get('checkinStations').filter((st) => st.id !== stationId));
+  const settings = store.get('checkinSettings');
+  if (settings.activeStationId === stationId) {
+    store.set('checkinSettings', { activeCheckinClassId: null, activeStationId: null });
+  }
+  return true;
+});
+
+ipcMain.handle('checkin:setActiveStation', (_e, stationId) => {
+  if (!stationId) {
+    const settings = { activeCheckinClassId: null, activeStationId: null };
+    store.set('checkinSettings', settings);
+    return settings;
+  }
+  const station = store.get('checkinStations').find((st) => st.id === stationId);
+  const settings = station
+    ? { activeCheckinClassId: station.classId, activeStationId: station.id }
+    : { activeCheckinClassId: null, activeStationId: null };
   store.set('checkinSettings', settings);
   return settings;
 });
@@ -289,7 +335,7 @@ ipcMain.handle('checkin:scan', (_e, rawCode) => {
     const classes = store.get('classes');
     const cls = classes.find((c) => c.id === activeClassId);
     if (!cls) {
-      store.set('checkinSettings', { activeCheckinClassId: null });
+      store.set('checkinSettings', { activeCheckinClassId: null, activeStationId: null });
       return { type: 'not_found', code };
     }
 

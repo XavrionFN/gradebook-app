@@ -15,7 +15,12 @@ contextBridge.exposeInMainWorld('gradebook', {
   addLocation: (payload) => ipcRenderer.invoke('location:add', payload),
   updateLocation: (payload) => ipcRenderer.invoke('location:update', payload),
   removeLocation: (locationId) => ipcRenderer.invoke('location:remove', locationId),
-  setActiveCheckinClass: (classId) => ipcRenderer.invoke('checkin:setActiveClass', classId),
+
+  addStation: (payload) => ipcRenderer.invoke('station:add', payload),
+  updateStation: (payload) => ipcRenderer.invoke('station:update', payload),
+  removeStation: (stationId) => ipcRenderer.invoke('station:remove', stationId),
+  setActiveStation: (stationId) => ipcRenderer.invoke('checkin:setActiveStation', stationId),
+
   sendOut: (payload) => ipcRenderer.invoke('checkin:sendOut', payload),
   scanCode: (code) => ipcRenderer.invoke('checkin:scan', code)
 });

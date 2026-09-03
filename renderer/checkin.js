@@ -10,7 +10,7 @@ const gradebookView = el('gradebookView');
 const checkinView = el('checkinView');
 const checkinSubTabs = el('checkinSubTabs');
 const scanInput = el('scanInput');
-const activeClassSelect = el('activeClassSelect');
+const stationSelect = el('stationSelect');
 const cameraOverlay = el('cameraOverlay');
 const cameraVideo = el('cameraVideo');
 const cameraStatus = el('cameraStatus');
@@ -206,38 +206,154 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && !cameraOverlay.hidden) stopCameraScan();
 });
 
-// --- Active check-in classroom selector ---
+// --- Active station selector (Scan tab) ---
 
-function populateActiveClassSelect() {
-  const cur = state.checkinSettings ? state.checkinSettings.activeCheckinClassId : null;
-  const eligible = state.classes.filter((c) => c.checkinMode && c.checkinMode !== 'off');
-  const options = ['<option value="">Hallway pass station (bathroom, nurse, office…)</option>'].concat(
-    eligible.map(
-      (c) =>
-        '<option value="' + c.id + '"' + (c.id === cur ? ' selected' : '') + '>' +
-        escapeHtml(c.name) + ' — ' + (c.checkinMode === 'roster' ? 'auto-add to roster' : 'attendance only') +
+function stationTargetLabel(station) {
+  if (!station.classId) return 'Hallway pass';
+  const cls = state.classes.find((c) => c.id === station.classId);
+  if (!cls) return 'Hallway pass';
+  return cls.name + ' — ' + (cls.checkinMode === 'roster' ? 'auto-add to roster' : 'attendance only');
+}
+
+function populateStationSelect() {
+  const cur = state.checkinSettings ? state.checkinSettings.activeStationId : null;
+  const stations = state.checkinStations || [];
+  const options = ['<option value="">Hallway pass (no station selected)</option>'].concat(
+    stations.map(
+      (st) =>
+        '<option value="' + st.id + '"' + (st.id === cur ? ' selected' : '') + '>' +
+        escapeHtml(st.name) + ' — ' + stationTargetLabel(st) +
         '</option>'
     )
   );
-  activeClassSelect.innerHTML = options.join('');
-  activeClassSelect.value = cur || '';
+  stationSelect.innerHTML = options.join('');
+  stationSelect.value = cur || '';
 
-  const hint = el('activeClassHint');
-  if (!cur) {
-    hint.textContent = 'Scans will offer a destination (bathroom, nurse, etc.) and track time out of class.';
+  const hint = el('stationHint');
+  const activeClassId = state.checkinSettings ? state.checkinSettings.activeCheckinClassId : null;
+  if (!activeClassId) {
+    hint.textContent = stations.length === 0
+      ? 'No stations set up yet. Create one on the Stations tab, or scan here now for plain hallway passes.'
+      : 'Scans will offer a destination (bathroom, nurse, etc.) and track time out of class.';
   } else {
-    const cls = state.classes.find((c) => c.id === cur);
+    const cls = state.classes.find((c) => c.id === activeClassId);
     hint.textContent =
       cls && cls.checkinMode === 'roster'
         ? 'Every scan here moves the student into ' + cls.name + '’s roster and logs a check-in.'
         : 'Every scan here logs attendance for ' + (cls ? cls.name : '') + ' without changing the student’s roster.';
   }
-  el('scanStatusTitle').textContent = cur ? 'Checked in today — ' + (state.classes.find((c) => c.id === cur)?.name || '') : 'Currently out of class';
+  el('scanStatusTitle').textContent = activeClassId
+    ? 'Checked in today — ' + (state.classes.find((c) => c.id === activeClassId)?.name || '')
+    : 'Currently out of class';
 }
 
-activeClassSelect.addEventListener('change', async () => {
-  await window.gradebook.setActiveCheckinClass(activeClassSelect.value || null);
+stationSelect.addEventListener('change', async () => {
+  await window.gradebook.setActiveStation(stationSelect.value || null);
   await refresh();
+});
+
+// --- Stations tab (create/manage saved check-in stations) ---
+
+function populateStationClassSelect() {
+  const sel = el('stationClassSelect');
+  const cur = sel.value;
+  const eligible = state.classes.filter((c) => c.checkinMode && c.checkinMode !== 'off');
+  const options = ['<option value="">Hallway pass station (bathroom, nurse, office…)</option>'].concat(
+    eligible.map(
+      (c) =>
+        '<option value="' + c.id + '">' + escapeHtml(c.name) + ' — ' +
+        (c.checkinMode === 'roster' ? 'auto-add to roster' : 'attendance only') + '</option>'
+    )
+  );
+  sel.innerHTML = options.join('');
+  sel.value = cur;
+}
+
+function renderStationsTable() {
+  const el2 = el('stationsTable');
+  const stations = state.checkinStations || [];
+  const activeStationId = state.checkinSettings ? state.checkinSettings.activeStationId : null;
+  if (stations.length === 0) {
+    el2.innerHTML = '<div class="empty">No stations yet. Add one below.</div>';
+    return;
+  }
+  let h = '<table class="simple-table"><tr><th>Name</th><th>Checks students into</th><th></th><th></th></tr>';
+  stations.forEach((st) => {
+    const isActive = st.id === activeStationId;
+    h +=
+      '<tr><td>' + escapeHtml(st.name) + '</td><td>' + escapeHtml(stationTargetLabel(st)) + '</td><td>' +
+      (isActive
+        ? '<span class="badge success">Active on this device</span>'
+        : '<button class="btn btn-icon" data-set-active-station="' + st.id + '">Set active</button>') +
+      '</td><td class="actions-row">' +
+      '<button class="btn btn-icon" data-edit-station="' + st.id + '">Edit</button> ' +
+      '<button class="btn btn-icon" data-remove-station="' + st.id + '">Delete</button>' +
+      '</td></tr>';
+  });
+  h += '</table>';
+  el2.innerHTML = h;
+}
+
+function openEditStationModal(station) {
+  const eligible = state.classes.filter((c) => c.checkinMode && c.checkinMode !== 'off');
+  const targetOptions = ['<option value="">Hallway pass station (bathroom, nurse, office…)</option>'].concat(
+    eligible.map(
+      (c) =>
+        '<option value="' + c.id + '"' + (station.classId === c.id ? ' selected' : '') + '>' +
+        escapeHtml(c.name) + ' — ' + (c.checkinMode === 'roster' ? 'auto-add to roster' : 'attendance only') + '</option>'
+    )
+  );
+  openModal(
+    'Edit Station',
+    `<div class="field">
+       <label for="stationModalName">Name</label>
+       <input type="text" id="stationModalName" placeholder="e.g. Front Office Kiosk" value="${escapeHtml(station.name)}" />
+     </div>
+     <div class="field">
+       <label for="stationModalClass">Checks students into</label>
+       <select id="stationModalClass">${targetOptions.join('')}</select>
+     </div>`,
+    'Save',
+    async () => {
+      const name = el('stationModalName').value.trim();
+      if (!name) return el('stationModalName').focus();
+      const classId = el('stationModalClass').value || null;
+      await window.gradebook.updateStation({ stationId: station.id, name, classId });
+      await refresh();
+      closeModal();
+    }
+  );
+}
+
+el('addStationBtn').addEventListener('click', async () => {
+  const name = el('stationName').value.trim();
+  if (!name) return alert('Enter a station name.');
+  const classId = el('stationClassSelect').value || null;
+  const created = await window.gradebook.addStation({ name, classId });
+  await window.gradebook.setActiveStation(created.id);
+  el('stationName').value = '';
+  await refresh();
+});
+
+el('stationsTable').addEventListener('click', async (e) => {
+  const setActiveId = e.target.dataset.setActiveStation;
+  if (setActiveId) {
+    await window.gradebook.setActiveStation(setActiveId);
+    await refresh();
+    return;
+  }
+  const editId = e.target.dataset.editStation;
+  if (editId) {
+    const station = (state.checkinStations || []).find((st) => st.id === editId);
+    if (station) openEditStationModal(station);
+    return;
+  }
+  const removeId = e.target.dataset.removeStation;
+  if (removeId) {
+    if (!confirm('Delete this station?')) return;
+    await window.gradebook.removeStation(removeId);
+    await refresh();
+  }
 });
 
 // --- Scan status panel (currently out, or today's classroom check-ins) ---
@@ -428,7 +544,9 @@ el('checkinLocationsTable').addEventListener('click', async (e) => {
 // --- Render all ---
 
 function renderCheckinView() {
-  populateActiveClassSelect();
+  populateStationSelect();
+  populateStationClassSelect();
+  renderStationsTable();
   renderScanStatus();
   renderCheckinStats();
   populateCheckinLogFilter();

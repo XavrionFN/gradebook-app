@@ -53,6 +53,7 @@
     <section id="checkinView" hidden>
       <nav class="class-tabs" id="checkinSubTabs">
         <span class="class-tab active"><button class="class-tab-label" data-checkin-tab="scan">Scan</button></span>
+        <span class="class-tab"><button class="class-tab-label" data-checkin-tab="stations">Stations</button></span>
         <span class="class-tab"><button class="class-tab-label" data-checkin-tab="activity">Activity</button></span>
         <span class="class-tab"><button class="class-tab-label" data-checkin-tab="locations">Locations</button></span>
       </nav>
@@ -61,9 +62,9 @@
         <div class="checkin-panel active" id="checkin-panel-scan">
           <div class="card">
             <div class="field">
-              <label for="activeClassSelect">This station checks students into</label>
-              <select id="activeClassSelect"></select>
-              <p class="hint" id="activeClassHint"></p>
+              <label for="stationSelect">This device is set to</label>
+              <select id="stationSelect"></select>
+              <p class="hint" id="stationHint"></p>
             </div>
           </div>
           <div class="card scan-box">
@@ -78,6 +79,30 @@
           <div class="card">
             <h2 id="scanStatusTitle">Currently out of class</h2>
             <div id="scanStatusTable"></div>
+          </div>
+        </div>
+
+        <div class="checkin-panel" id="checkin-panel-stations">
+          <div class="card">
+            <h2>Check-in stations</h2>
+            <p class="hint" style="margin-bottom:10px;">A station is a saved, named setup for a scanning device — e.g. "Mr. Mangum's Door" or "Front Office Kiosk". Create one for each device or doorway, then pick it as active on the Scan tab.</p>
+            <div id="stationsTable"></div>
+          </div>
+          <div class="card">
+            <h3>Add a station</h3>
+            <div class="row">
+              <div class="field">
+                <label for="stationName">Name</label>
+                <input type="text" id="stationName" placeholder="e.g. Front Office Kiosk" />
+              </div>
+              <div class="field">
+                <label for="stationClassSelect">Checks students into</label>
+                <select id="stationClassSelect"></select>
+              </div>
+              <div class="field" style="flex:0; align-self:flex-end;">
+                <button class="btn btn-primary" id="addStationBtn">Add</button>
+              </div>
+            </div>
           </div>
         </div>
 
