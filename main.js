@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, session } = require('electron');
 const path = require('path');
 const fs = require('fs');
 
@@ -77,7 +77,14 @@ function createWindow() {
   mainWindow.loadFile(path.join(__dirname, 'renderer', 'index.html'));
 }
 
-app.whenReady().then(createWindow).catch((err) => logFatal('whenReady', err));
+app.whenReady().then(() => {
+  // Only the camera is ever needed (for scan-to-check-in); deny everything else by default.
+  session.defaultSession.setPermissionRequestHandler((_wc, permission, callback) => {
+    callback(permission === 'media');
+  });
+  session.defaultSession.setPermissionCheckHandler((_wc, permission) => permission === 'media');
+  createWindow();
+}).catch((err) => logFatal('whenReady', err));
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();

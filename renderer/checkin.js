@@ -11,6 +11,9 @@ const checkinView = el('checkinView');
 const checkinSubTabs = el('checkinSubTabs');
 const scanInput = el('scanInput');
 const activeClassSelect = el('activeClassSelect');
+const cameraOverlay = el('cameraOverlay');
+const cameraVideo = el('cameraVideo');
+const cameraStatus = el('cameraStatus');
 
 function ciTodayStr() {
   const d = new Date();
@@ -43,7 +46,11 @@ viewSwitch.addEventListener('click', (e) => {
   viewSwitch.querySelectorAll('.view-switch-btn').forEach((b) => b.classList.toggle('active', b.dataset.view === view));
   gradebookView.hidden = view !== 'gradebook';
   checkinView.hidden = view !== 'checkin';
-  if (view === 'checkin' && checkinSubTab === 'scan') scanInput.focus();
+  if (view === 'checkin' && checkinSubTab === 'scan') {
+    scanInput.focus();
+  } else {
+    stopCameraScan();
+  }
 });
 
 checkinSubTabs.addEventListener('click', (e) => {
@@ -55,7 +62,11 @@ checkinSubTabs.addEventListener('click', (e) => {
   });
   document.querySelectorAll('.checkin-panel').forEach((p) => p.classList.remove('active'));
   el('checkin-panel-' + tab).classList.add('active');
-  if (tab === 'scan') scanInput.focus();
+  if (tab === 'scan') {
+    scanInput.focus();
+  } else {
+    stopCameraScan();
+  }
 });
 
 // --- Scan ---
@@ -68,7 +79,7 @@ scanInput.addEventListener('keydown', (e) => {
   }
 });
 window.addEventListener('click', () => {
-  if (!checkinView.hidden && checkinSubTab === 'scan' && modalBackdrop.hidden) scanInput.focus();
+  if (!checkinView.hidden && checkinSubTab === 'scan' && modalBackdrop.hidden && cameraOverlay.hidden) scanInput.focus();
 });
 
 function showScanToast(msg, type) {
@@ -142,6 +153,56 @@ modalBody.addEventListener('click', async (e) => {
   closeModal();
   await refresh();
   scanInput.focus();
+});
+
+// --- Camera scanning (webcam QR/barcode reader) ---
+
+let zxingReader = null;
+let lastCameraCode = null;
+let lastCameraCodeAt = 0;
+
+async function startCameraScan() {
+  if (typeof ZXing === 'undefined') {
+    showScanToast('Camera scanning library failed to load.', 'err');
+    return;
+  }
+  cameraOverlay.hidden = false;
+  cameraStatus.textContent = 'Requesting camera access…';
+  lastCameraCode = null;
+  zxingReader = new ZXing.BrowserMultiFormatReader();
+  try {
+    await zxingReader.decodeFromVideoDevice(undefined, cameraVideo, (result) => {
+      if (!result) return;
+      const code = result.getText();
+      const now = Date.now();
+      if (code === lastCameraCode && now - lastCameraCodeAt < 3000) return;
+      lastCameraCode = code;
+      lastCameraCodeAt = now;
+      cameraStatus.textContent = 'Scanned: ' + code;
+      handleScan(code);
+    });
+    cameraStatus.textContent = 'Point a QR code or barcode at the camera.';
+  } catch (err) {
+    cameraStatus.textContent = 'Could not access the camera: ' + (err.message || err);
+  }
+}
+
+function stopCameraScan() {
+  if (zxingReader) {
+    zxingReader.reset();
+    zxingReader = null;
+  }
+  cameraOverlay.hidden = true;
+  lastCameraCode = null;
+}
+
+el('useCameraBtn').addEventListener('click', startCameraScan);
+el('cameraCloseBtn').addEventListener('click', stopCameraScan);
+cameraOverlay.addEventListener('click', (e) => {
+  if (e.target === cameraOverlay) stopCameraScan();
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && !cameraOverlay.hidden) stopCameraScan();
 });
 
 // --- Active check-in classroom selector ---

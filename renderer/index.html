@@ -69,6 +69,9 @@
             <label for="scanInput">Scan or type student check-in code, then press Enter</label>
             <input type="text" id="scanInput" autocomplete="off" placeholder="Scan badge here" />
             <div class="scan-hint">Works with any USB/Bluetooth barcode or QR scanner (acts like a keyboard), or type the code manually.</div>
+            <div class="scan-actions">
+              <button class="btn btn-secondary" id="useCameraBtn">📷 Use this computer's camera</button>
+            </div>
             <div class="toast" id="scanToast"></div>
           </div>
           <div class="card">
@@ -134,6 +137,19 @@
     </div>
   </div>
 
+  <div class="modal-backdrop" id="cameraOverlay" hidden>
+    <div class="modal camera-modal">
+      <h3>Scan with camera</h3>
+      <p class="hint" style="margin-bottom:12px;">Hold a student's QR code or barcode up to the camera.</p>
+      <video id="cameraVideo" autoplay playsinline muted></video>
+      <p class="hint" id="cameraStatus"></p>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" id="cameraCloseBtn">Close camera</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="vendor/zxing.min.js"></script>
   <script src="app.js"></script>
   <script src="checkin.js"></script>
 </body>
